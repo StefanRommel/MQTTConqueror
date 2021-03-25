@@ -3,7 +3,7 @@
         <Menubar :model="menu">
              <template #start>
                 <div class="p-d-flex">
-                    <div><Button type="button" icon="pi pi-cloud" label="Not Connected" @click="toggleConnectDialog"/></div>
+                    <div><Button type="button" icon="pi pi-cloud" :label="loading ? 'Not Connected' : 'Connected'" @click="toggleConnectDialog"/></div>
                     <OverlayPanel ref="op" appendTo="body" :showCloseIcon="true" id="overlay_panel" style="width: 450px">
                         <div class="p-grid p-flex-column">
                             <div class="p-row">
@@ -32,6 +32,7 @@
                                         Password
                                     </div>
                                     <div class="p-col-1">
+                                        <!-- <InputText id="password" type="text" v-model="password" style="width: 270px"/> -->
                                         <Password id="password" type="text" :feedback="false" toggleMask v-model="password"/>
                                     </div>
                                 </div>
@@ -53,21 +54,58 @@
                 </div>
             </template>
         </Menubar>
-        <Splitter style="height: 800px">
-            <SplitterPanel>
-                <ScrollPanel>
-                    <TreeTable :value="atree" :filters="filters" :expandedKeys="expandedKeys" filterMode="lenient" class="" selectionMode="single" v-model:selectionKeys="selectedTopic" @node-select="onSelectedTopicChanged" style="padding: 0; max-height: 780px;">
-                        <Column field="node" header="Topic" headerStyle="width:300px" :expander="true"></Column>
-                        <!-- <Column field="topic" header="Topic"></Column> -->
-                        <Column field="message" header="Message" bodyClass="p-text-nowrap p-text-truncate"></Column>
-                        <Column field="counter" header="Counter" headerStyle="width:100px" bodyStyle="text-align: center"></Column>
-                    </TreeTable>
-                </ScrollPanel>
+        <Splitter style="height: 300px" layout="vertical">
+             <SplitterPanel>
+                <Splitter style="height: 75vh">
+                    <SplitterPanel>
+                        <ScrollPanel style="padding: 0; height:70vh;">
+                            <TreeTable :value="atree" :filters="filters" :expandedKeys="expandedKeys" filterMode="lenient" filterMatchMode="in" class="" selectionMode="single" v-model:selectionKeys="selectedTopic" @node-select="onSelectedTopicChanged" style="min-height:70vh;">
+                                <Column field="node" header="Topic" headerStyle="width:300px" :expander="true"></Column>
+                                <!-- <Column field="topic" header="Topic"></Column> -->
+                                <Column field="message" header="Message" bodyClass="p-text-nowrap p-text-truncate"></Column>
+                                <Column field="counter" header="Counter" headerStyle="width:100px" bodyStyle="text-align: center"></Column>
+                            </TreeTable>
+                        </ScrollPanel>
+                    </SplitterPanel>
+                    <SplitterPanel :size="30">
+                        <ScrollPanel>
+                            <pre v-highlightjs><code style="min-width: 700px; min-height: 780px; max-width: 700px; max-height: 780px;" class="json">{{selectedTopicDetail}}</code></pre>
+                        </ScrollPanel>
+                    </SplitterPanel>
+                </Splitter>
             </SplitterPanel>
-            <SplitterPanel :size="30">
-                <ScrollPanel>
-                    <pre v-highlightjs><code style="min-width: 700px; min-height: 780px; max-width: 700px; max-height: 780px;" class="json">{{selectedTopicDetail}}</code></pre>
-                </ScrollPanel>
+            <SplitterPanel>
+                 <div class="p-grid p-flex-column">
+                    <div class="p-row">
+                        <div class="p-grid p-jc-start">
+                            <div class="p-col-2">
+                                Topic
+                            </div>
+                            <div class="p-col-6">
+                                <InputText id="Topic" type="text" v-model="pubishTopicName" style="width: 270px"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-row">
+                        <div class="p-grid p-jc-start">
+                            <div class="p-col-2">
+                                Message
+                            </div>
+                            <div class="p-col-1">
+                                <InputText id="Message" type="text" v-model="pubishTopicMessage" style="width: 270px"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-row">
+                        <div class="p-grid p-jc-end">
+                            <div class="p-col-2">
+                                <Button type="button" label="Publish" @click="pubishTopic"/>
+                            </div>
+                            <div class="p-col-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </SplitterPanel>
         </Splitter>
     </div>
@@ -96,14 +134,27 @@ export default {
             menu: [{label: 'MQTTConqueror'}],
             filters: {},
             expandedKeys: {},
-            servername: 'mqtt://192.168.1.104:1884',
+            servername: null,
             password: null,
             username: null,
+            loading: true,
+            pubishTopicName: null,
+            pubishTopicMessage: null,
+            mqttClient: null
         }
     },
     computed: {
     },
     watch: {
+        servername(newservername){
+            localStorage.servername = newservername;
+        },
+        password(newpassword){
+            localStorage.password = newpassword;
+        },
+        username(newusername){
+            localStorage.username = newusername;
+        },
     },
     methods: {
         create_UUID() {
@@ -171,6 +222,9 @@ export default {
         collapseAll() {
             this.expandedKeys = {};
         },
+        pubishTopic(){
+            this.mqttClient.publish(this.pubishTopicName, this.pubishTopicMessage)
+        },
         expandNode(node) {
             if (node.children && node.children.length) {
                 this.expandedKeys[node.key] = true;
@@ -184,27 +238,32 @@ export default {
             this.$refs.op.toggle(event);
         },
         connectToServer(){
-            const client = mqtt.connect(this.servername, {username: this.username, password: this.password})
-            client.on('message', (topic, message) => {
+            this.mqttClient = mqtt.connect(this.servername, {username: this.username, password: this.password})
+            this.mqttClient.on('message', (topic, message) => {
+                this.loading = false
                 var test = "myhome/" + topic
                 var steps = test.split('/');
 
                 this.fillTree(topic, steps, message.toString())
                 this.atree = [this.tree]
+
+                console.log(this.atree)
             })
-            client.on('error', (message) => {
+            this.mqttClient.on('error', (message) => {
+                this.loading = true
                 console.log('error ', message)
             })
-            client.on('offline', () => {
+            this.mqttClient.on('offline', () => {
+                this.loading = true
                 console.log('offline')
             })
-            client.on('connect', () => {
-                client.subscribe('#', (err) => {
+            this.mqttClient.on('connect', () => {
+                this.mqttClient.subscribe('#', (err) => {
                     if (!err) {
                         // console.log('connerr', err)
                     }
                 })
-                client.subscribe('$SYS/#', (err) => {
+                this.mqttClient.subscribe('$SYS/#', (err) => {
                     if (!err) {
                         // console.log('connerr', err)
                     }
@@ -213,6 +272,12 @@ export default {
         }
     },
     mounted () {
+        if (localStorage.servername)
+            this.servername = localStorage.servername;
+        if (localStorage.username)
+            this.username = localStorage.username;
+        if (localStorage.password)
+            this.password = localStorage.password;
     }
 }
 </script>
