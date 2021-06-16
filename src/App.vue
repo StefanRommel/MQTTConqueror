@@ -75,33 +75,35 @@
                 </Splitter>
             </SplitterPanel>
             <SplitterPanel>
-                 <div class="p-grid p-flex-column">
-                    <div class="p-row">
-                        <div class="p-grid p-jc-start">
-                            <div class="p-col-2">
-                                Topic
-                            </div>
-                            <div class="p-col-6">
-                                <InputText id="Topic" type="text" v-model="pubishTopicName" style="width: 270px"/>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-row">
-                        <div class="p-grid p-jc-start">
-                            <div class="p-col-2">
-                                Message
-                            </div>
-                            <div class="p-col-1">
-                                <InputText id="Message" type="text" v-model="pubishTopicMessage" style="width: 270px"/>
+                <div>
+                    <div class="p-grid p-flex-column" style="margin-right: 0rem; margin-left: 0rem; margin-top: 0rem;">
+                        <div class="p-row">
+                            <div class="p-grid p-jc-start" style="margin-right: 0rem; margin-left: 0rem; margin-top: 0rem;">
+                                <div class="p-col-2">
+                                    Topic
+                                </div>
+                                <div class="p-col-6">
+                                    <InputText id="Topic" type="text" v-model="pubishTopicName" style="width: 550px"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="p-row">
-                        <div class="p-grid p-jc-end">
-                            <div class="p-col-2">
-                                <Button type="button" label="Publish" @click="pubishTopic"/>
+                        <div class="p-row">
+                            <div class="p-grid p-jc-start" style="margin-right: 0rem; margin-left: 0rem; margin-top: 0rem;">
+                                <div class="p-col-2">
+                                    Message
+                                </div>
+                                <div class="p-col-1">
+                                    <InputText id="Message" type="text" v-model="pubishTopicMessage" style="width: 550px"/>
+                                </div>
                             </div>
-                            <div class="p-col-1">
+                        </div>
+                        <div class="p-row">
+                            <div class="p-grid p-jc-end">
+                                <div class="p-col-2">
+                                    <Button type="button" label="Publish" @click="pubishTopic"/>
+                                </div>
+                                <div class="p-col-5">
+                                </div>
                             </div>
                         </div>
                     </div>
